@@ -1,0 +1,10 @@
+mkt_cap/data/
+mkt_cap/mktcap_combined.csv
+mkt_cap/plots/
+four_factor_combined/data/
+four_factor_combined/primiss/
+mkt_cap/mktcap_combined.csv
+four_factor_combined/.Rproj.user/
+mkt_cap/.Rproj.user/
+four_factor_combined/.Rhistory
+.Rproj.user/
