@@ -103,7 +103,7 @@ portfolios_w_return <- portfolios_w_return %>%
 factors_replicated <- portfolios_w_return %>%
   group_by(portfolio_size, portfolio_bm, YYYYMM) %>%
   summarize(
-    ret = weighted.mean(excess_return, adjusted_SIZE, na.rm = TRUE), .groups = "drop"
+    ret = weighted.mean(excess_return, SIZE, na.rm = TRUE), .groups = "drop"
   ) %>%
   group_by(YYYYMM) %>%
   summarize(
@@ -119,4 +119,4 @@ factors_replicated <- portfolios_w_return %>%
 print(head(factors_replicated))
 
 # Save the factors to a CSV file if needed
-write.csv(factors_replicated, "data/ff3_b.csv", row.names = FALSE)
+write.csv(factors_replicated, "data/ff3.csv", row.names = FALSE)

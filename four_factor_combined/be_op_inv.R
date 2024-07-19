@@ -9,7 +9,7 @@ library(readxl)
 library(dplyr)
 library(tidyr)
 
-directory = "."
+directory = "data/"
 
 she <- read_excel(file.path(directory, "she_ai.xlsx"))
 pef <- read_excel(file.path(directory, "pef_ai.xlsx"))
@@ -54,12 +54,17 @@ combined_df <- combined_df %>%
   mutate(segment = cumsum(FYRA != lag(FYRA, default = first(FYRA)))) %>%
   ungroup()
 
-# Perform the lag operation within each segment
+# Perform the lag operation within each segment with additional filter for FYYYY changes > 1 year
 combined_df <- combined_df %>%
   group_by(KYGVKEY, segment) %>%
-  mutate(at_lag1 = lag(AT),
-         inv = ifelse(at_lag1 == 0, NA, AT / at_lag1)) %>%
-  ungroup()
+  mutate(
+    at_lag1 = lag(AT),
+    FYYYY_lag = lag(FYYYY),
+    at_lag1 = ifelse(FYYYY - FYYYY_lag > 1, NA, at_lag1),
+    inv = ifelse(at_lag1 == 0, NA, AT / at_lag1)
+  ) %>%
+  ungroup() %>%
+  select(-FYYYY_lag)  # Remove the temporary FYYYY_lag column if not needed
 
 book_equity_df <- combined_df %>%
   select(KYGVKEY, KEYSET_TAG, FYYYY, FYRA, pef, she, txditc, be1, op1, op2, inv, AT, at_lag1) %>%

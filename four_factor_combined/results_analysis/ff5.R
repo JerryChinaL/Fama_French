@@ -1,4 +1,5 @@
 library(dplyr)
+library(readxl)
 
 mthret <- read.csv("data/mthret.csv")
 exch <- readRDS("../mkt_cap/data/sfz_agg_mth_short.rds") %>% 
@@ -103,12 +104,18 @@ portfolios_w_return <- portfolios_w_return %>%
   mutate(excess_return = MTHRET - (RF/100))
 
 portfolios_w_return <- portfolios_w_return %>%
-  left_join(n_stocks, by = c("KYGVKEY", "YYYYMM")) %>%
-  mutate(SIZE = SIZE / n_stocks)
+  left_join(n_stocks, by = c("KYGVKEY", "YYYYMM"))
+
+portfolios_w_return %>% 
+  group_by(KYPERMNO, YYYYMM) %>%
+  filter(n() > 1) %>%
+  ungroup() %>%
+  View("final dup")
 
 # Calculate the factors according to the provided formula using weighted mean with SIZE
 factors_replicated <- portfolios_w_return %>%
   group_by(YYYYMM) %>%
+  mutate(SIZE = ifelse(is.na(SIZE), 0, SIZE)) %>%
   summarize(
     SH = weighted.mean(excess_return[portfolio_size == 1 & portfolio_bm == 3], SIZE[portfolio_size == 1 & portfolio_bm == 3], na.rm = TRUE),  # Small size, High B/M
     SN_bm = weighted.mean(excess_return[portfolio_size == 1 & portfolio_bm == 2], SIZE[portfolio_size == 1 & portfolio_bm == 2], na.rm = TRUE),  # Small size, Neutral B/M
@@ -153,4 +160,4 @@ factors_replicated <- portfolios_w_return %>%
 print(head(factors_replicated))
 
 # Save the factors to a CSV file if needed
-write.csv(factors_replicated, "data/ff5_b.csv", row.names = FALSE)
+write.csv(factors_replicated, "data/ff5.csv", row.names = FALSE)

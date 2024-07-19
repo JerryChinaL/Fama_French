@@ -15,8 +15,8 @@ prccm1620 <- read_excel("ab1620_true_ms.xlsx")
 prccm2023 <- read_excel("ab10_23_ms.xlsx")
 prccm <- bind_rows(prccm0812, prccm1216, prccm1620, prccm2023)
 
-mthcap <- readRDS("../../old data/sfz_agg_mth.rds") %>% filter(SHRCD == 10 | SHRCD == 11)
-mthcap <- mthcap[,c('KYPERMNO','YYYYMM','MCALDT','MTHCAP', 'MTHPRC', 'MTHPREVPRC', 'MTHRET', 'MTHRETX', 'TICKER', 'PRIMEXCH')]
+mthcap <- readRDS("../old data/sfz_agg_mth.rds") %>% filter(SHRCD == 10 | SHRCD == 11)
+mthcap <- mthcap[,c('KYPERMNO','YYYYMM','MCALDT','MTHCAP', 'MTHPRC', 'MTHVOLFLG', 'MTHRET', 'MTHVOL', 'TICKER', 'PRIMEXCH')]
 saveRDS(mthcap, "data/sfz_agg_mth_short.rds")
 
 data <- mthcap %>%
