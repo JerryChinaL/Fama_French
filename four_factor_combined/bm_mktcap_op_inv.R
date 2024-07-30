@@ -1,10 +1,7 @@
 ##############
-
 # This file joins the be_op_inv output with the mktcap data to calculate the SIZE and bm factor.
 # It also joins with the mthret and rf-return data to calculate the excess return. 
-
 #The final dataframe only contains rows with non-empty returns, stocks in NAQ exchanges, and primary stocks.
-
 ##############
 
 library(readxl)
@@ -13,35 +10,6 @@ library(lubridate)
 
 mktcap <- read.csv("../mkt_cap/mktcap_combined.csv")
 book_equity_df <- read.csv("data/be_op_in.csv")
-mthret <- read.csv("data/mthret.csv")
-exch <- readRDS("../mkt_cap/data/sfz_agg_mth_short.rds") %>% 
-  select(KYPERMNO, YYYYMM, PRIMEXCH)
-primiss_files <- c("6070", "7078", "7885", "8590", "9095", "9500", "0004", "0408", "p0812", "p1216","p1620","p2023")
-primiss_files <- paste0("primiss/", primiss_files, "_ms.xlsx")
-primiss <- bind_rows(lapply(primiss_files, read_excel))
-
-primiss <- primiss %>%
-  mutate(
-    DATADATE = as.Date(as.character(DATADATE), "%Y-%m-%d"),
-    YYYYMM = as.numeric(format(DATADATE, "%Y%m"))
-  ) %>% 
-  filter(PRIMISS == 'P') %>% 
-  select(KYPERMNO, YYYYMM) %>% 
-  distinct()
-
-mthret <- mthret %>%
-  left_join(exch, by = c("KYPERMNO", "YYYYMM")) %>%
-  filter(PRIMEXCH == "N" | PRIMEXCH == "A" | PRIMEXCH == "Q") %>%
-  inner_join(primiss, by = c("KYPERMNO", "YYYYMM")) %>% # use primary stock
-  mutate(
-    year = floor(YYYYMM / 100),
-    month = round(YYYYMM %% 100),
-    sort_date = case_when(
-      month <= 6 ~ paste0(year - 1, "-07-01"),
-      month >= 7 ~ paste0(year, "-07-01")
-      )
-    ) %>%
-  select(KYPERMNO, KYGVKEY, sort_date, MTHRET, return_date = MCALDT, PRIMEXCH)
 
 size <- mktcap %>%
   mutate(
@@ -85,29 +53,11 @@ combined_df <- size %>%
   left_join(mkt_equity, by = c("KYGVKEY", "sort_date")) %>%
   mutate(bm = be1 / me)
 
-filtered_combined_df <- combined_df %>%
-  filter(KYGVKEY == 2176)
+# filtered_combined_df <- combined_df %>%
+#   filter(KYGVKEY == 2176)
 
 fout_factor_tojoin <- combined_df %>% 
   select(KYGVKEY, sort_date, SIZE, bm, op1, op = op2, inv, at = AT, at_lag1, be1, FYYYY, FYRA)
 
 saveRDS(fout_factor_tojoin, "data/four_factors.rds")
-
-# # write to csv
-# write.csv(fout_factor_tojoin, "data/fout_factor_tojoin.csv", row.names = FALSE)
-
-final_df <- left_join(mthret, fout_factor_tojoin, by = c("KYGVKEY", "sort_date"))
-
-# add the excess return column by appending rf rate then subtracting.
-rf_data <- read.csv("../monthly_rf.csv")
-four_factors_excret <- final_df %>% 
-  mutate(rf_date = format(as.Date(return_date), "%Y%m")) %>%
-  left_join(rf_data %>% mutate(rf_date = as.character(X)) %>% select(rf_date, RF), by = c("rf_date")) %>%
-  select(-c(rf_date)) %>%
-  mutate(excess_return = MTHRET - (RF/100))
-
-saveRDS(four_factors_excret, "data/four_factors_excret.rds")
-
-# # View the final dataframe for inspection
-# View(final_df %>% filter(KYGVKEY == 1690))
 

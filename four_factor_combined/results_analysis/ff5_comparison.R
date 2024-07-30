@@ -12,7 +12,8 @@ ff5 <- read.csv("data/ff5.csv")
 
 # Ensure the date column is in Date format
 ff5_original$YYYYMM <- as.Date(paste0(ff5_original$YYYYMM, "01"), format = "%Y%m%d")
-ff5$YYYYMM <- as.Date(paste0(ff5$YYYYMM, "01"), format = "%Y%m%d")
+# ff5$YYYYMM <- as.Date(paste0(ff5$YYYYMM, "01"), format = "%Y%m%d")
+ff5$YYYYMM <- as.Date(ff5$YYYYMM)
 
 # Join the datasets on the common YYYYMM values
 combined_data <- inner_join(ff5_original, ff5, by = "YYYYMM", suffix = c("_original", "_replicated"))

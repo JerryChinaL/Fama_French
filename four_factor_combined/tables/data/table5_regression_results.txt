@@ -1,0 +1,40 @@
+Coefficients-latex :
+% latex table generated in R 4.4.0 by xtable 1.8-4 package
+% Wed Jul 24 12:35:47 2024
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrrrr}
+  \hline
+ & r\_mkt & SMB & HML & RMW & CMA & (Intercept) & R\verb|^|2 \\ 
+  \hline
+r\_mkt &  & 0.30 & -0.00 & -0.27 & -0.78 & 0.81 & 0.23 \\ 
+  SMB & 0.15 &  & 0.04 & -0.39 & -0.02 & 0.18 & 0.16 \\ 
+  HML & -0.00 & 0.02 &  & 0.13 & 1.09 & -0.11 & 0.57 \\ 
+  RMW & -0.08 & -0.22 & 0.14 &  & -0.15 & 0.34 & 0.15 \\ 
+  CMA & -0.09 & -0.00 & 0.47 & -0.06 &  & 0.28 & 0.59 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+T-Statistics-latex :
+% latex table generated in R 4.4.0 by xtable 1.8-4 package
+% Wed Jul 24 12:35:47 2024
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrrrrr}
+  \hline
+ & r\_mkt & SMB & HML & RMW & CMA & (Intercept) & R\verb|^|2 \\ 
+  \hline
+r\_mkt &  & 5.39 & -0.00 & -3.53 & -6.69 & 4.95 & 0.23 \\ 
+  SMB & 5.39 &  & 0.63 & -7.53 & -0.23 & 1.55 & 0.16 \\ 
+  HML & -0.00 & 0.63 &  & 3.40 & 25.37 & -1.26 & 0.57 \\ 
+  RMW & -3.53 & -7.53 & 3.40 &  & -2.27 & 3.87 & 0.15 \\ 
+  CMA & -6.69 & -0.23 & 25.37 & -2.27 &  & 5.01 & 0.59 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+Coefficients :
+
+T-Statistics :
+

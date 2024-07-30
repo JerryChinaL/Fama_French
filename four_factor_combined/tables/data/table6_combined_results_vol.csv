@@ -1,0 +1,16 @@
+"file","factor_set","GRS","GRS.1","avg_abs_intercept","dispersion_ratio","avg_intercept_var_ratio","avg_r_squared"
+"table6_vol_op_ret.rds","r_mkt, SMB, HML",1.45,0.076,0.134,1.2,0.28,0.85
+"table6_vol_op_ret.rds","r_mkt, SMB, HML, RMW",0.99,0.484,0.082,0.39,0.7,0.87
+"table6_vol_op_ret.rds","r_mkt, SMB, HML, CMA",1.82,0.009,0.157,1.38,0.24,0.85
+"table6_vol_op_ret.rds","r_mkt, SMB, RMW, CMA",1.09,0.344,0.074,0.3,0.96,0.87
+"table6_vol_op_ret.rds","r_mkt, SMB, HML, RMW, CMA",1.1,0.332,0.07,0.26,1.07,0.88
+"table6_vol_inv_ret.rds","r_mkt, SMB, HML",4.94,0,0.166,0.99,0.17,0.86
+"table6_vol_inv_ret.rds","r_mkt, SMB, HML, RMW",4.62,0,0.166,0.87,0.18,0.87
+"table6_vol_inv_ret.rds","r_mkt, SMB, HML, CMA",4.47,0,0.152,0.75,0.21,0.87
+"table6_vol_inv_ret.rds","r_mkt, SMB, RMW, CMA",3.48,0,0.127,0.49,0.32,0.87
+"table6_vol_inv_ret.rds","r_mkt, SMB, HML, RMW, CMA",3.82,0,0.133,0.5,0.31,0.88
+"table6_vol_bm_ret.rds","r_mkt, SMB, HML",2.42,0,0.13,0.83,0.23,0.86
+"table6_vol_bm_ret.rds","r_mkt, SMB, HML, RMW",1.96,0.004,0.112,0.5,0.38,0.86
+"table6_vol_bm_ret.rds","r_mkt, SMB, HML, CMA",2.41,0,0.124,0.7,0.28,0.86
+"table6_vol_bm_ret.rds","r_mkt, SMB, RMW, CMA",1.92,0.005,0.092,0.31,0.7,0.84
+"table6_vol_bm_ret.rds","r_mkt, SMB, HML, RMW, CMA",1.87,0.007,0.102,0.36,0.53,0.86
