@@ -1,10 +1,19 @@
+rm(list = ls())
+
 library(dplyr)
 library(tidyr)
 library(broom)
 library(xtable)
 
+date_min <- as.Date("1963-07-01")
+date_max <- as.Date("2013-12-31")
+
+date_min <- as.Date("1913-07-01")
+date_max <- as.Date("2093-12-31")
+
 # Load necessary libraries and data
-factors <- readRDS("data/portfolios_w_return.rds")
+factors <- readRDS("data/portfolios_w_return.rds") %>%
+  mutate(monthly_date = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"))
 
 # Load the factors data
 factors_replicated <- read.csv("data/ff5.csv") %>%
@@ -17,7 +26,7 @@ rf_data <- read.csv("data/monthly_rf.csv") %>%
 
 r_factors <- factors_replicated %>%
   left_join(rf_data, by = "monthly_date") %>%
-  filter(monthly_date >= as.Date("1968-01-01") & monthly_date <= as.Date("2018-12-31"))
+  filter(monthly_date >= date_min & monthly_date <= date_max)
 
 # Define the function to assign portfolios
 assign_portfolio <- function(data, sorting_variable, percentiles) {
@@ -72,19 +81,18 @@ portfolios_5x5 <- portfolios_5x5 %>%
   mutate(MTHRET = MTHRET * 100 - RF)
 
 # List of variables to loop through
-variables <- c("op", "inv", "bm")
+variables <- c("bm","op", "inv")
 
 # Initialize a list to store regression results
 regression_results <- list()
 t_test_results <- list()
 r_squared_results <- list()
-intercept_t_stats <- list()
 
 for (var in variables) {
   # Filter for non-NA values at the beginning of the loop
   portfolios_5x5_filtered <- portfolios_5x5 %>%
     filter(!is.na(!!sym(paste0("portfolio_", var))) & !is.na(SIZE) & !is.na(MTHRET),
-           YYYYMM >= as.Date("1968-10-01") & YYYYMM <= as.Date("2018-12-31"))
+           as.Date(YYYYMM) >= date_min & as.Date(YYYYMM) <= date_max)
   
   # Calculate the average monthly return for each quantile pair for each month
   monthly_grid <- portfolios_5x5_filtered %>%
@@ -121,22 +129,25 @@ for (var in variables) {
     t_test_matrix <- matrix(nrow = 5, ncol = 5)
     dimnames(coef_matrix) <- list(paste0("SIZE_", 1:5), paste0(var, "_", 1:5))
     dimnames(t_test_matrix) <- list(paste0("SIZE_", 1:5), paste0(var, "_", 1:5))
-    for (i in 1:25) {
-      coef_matrix[i] <- round(coef(summary(reg_results[[i]]))[coef_name, "Estimate"], 2)
-      t_test_matrix[i] <- round(coef(summary(reg_results[[i]]))[coef_name, "t value"], 2)
+    for (i in 1:5) {
+      for (j in 1:5) {
+        idx <- (i - 1) * 5 + j
+        coef_matrix[i, j] <- round(coef(summary(reg_results[[idx]]))[coef_name, "Estimate"], 2)
+        t_test_matrix[i, j] <- round(coef(summary(reg_results[[idx]]))[coef_name, "t value"], 2)
+      }
     }
     regression_results[[paste0(var, "_", coef_name)]] <- coef_matrix
     t_test_results[[paste0(var, "_", coef_name, "_t_value")]] <- t_test_matrix
-    if (coef_name == "(Intercept)") {
-      intercept_t_stats[[paste0(var, "_", coef_name, "_t_value")]] <- t_test_matrix
-    }
   }
   
   # Extract R-squared values and organize into a matrix
   r_squared_matrix <- matrix(nrow = 5, ncol = 5)
   dimnames(r_squared_matrix) <- list(paste0("SIZE_", 1:5), paste0(var, "_", 1:5))
-  for (i in 1:25) {
-    r_squared_matrix[i] <- round(summary(reg_results[[i]])$r.squared, 2)
+  for (i in 1:5) {
+    for (j in 1:5) {
+      idx <- (i - 1) * 5 + j
+      r_squared_matrix[i, j] <- round(summary(reg_results[[idx]])$r.squared, 2)
+    }
   }
   r_squared_results[[paste0(var, "_R_squared")]] <- r_squared_matrix
 }
@@ -146,58 +157,96 @@ format_colnames <- function(names) {
   return(gsub("_", "\\\\_", names))
 }
 
-# Create a LaTeX file for each variable
-for (var in variables) {
-  output_file <- paste0("tables/data/table4_", var, "_regression_results.tex")
-  file_conn <- file(output_file, open = "wt")
+# Combine results into 5x15 matrices
+combine_results <- function(coef_name) {
+  combined_matrix <- matrix(NA, nrow = 5, ncol = 15)
+  colnames(combined_matrix) <- c(paste0("bm_", 1:5), paste0("op_", 1:5), paste0("inv_", 1:5))
+  rownames(combined_matrix) <- paste0("SIZE_", 1:5)
   
-  for (coef_name in c("(Intercept)", "r_mkt", "SMB", "HML", "RMW", "CMA", "R_squared")) {
+  for (var in variables) {
+    start_col <- match(paste0(var, "_1"), colnames(combined_matrix))
+    end_col <- start_col + 4
     if (coef_name == "R_squared") {
-      table_matrix <- r_squared_results[[paste0(var, "_", coef_name)]]
+      combined_matrix[, start_col:end_col] <- r_squared_results[[paste0(var, "_", coef_name)]]
     } else {
-      table_matrix <- regression_results[[paste0(var, "_", coef_name)]]
+      combined_matrix[, start_col:end_col] <- regression_results[[paste0(var, "_", coef_name)]]
     }
-    
-    # Convert the matrix to a data frame for xtable
-    df_table <- as.data.frame(table_matrix, stringsAsFactors = FALSE)
-    
-    # Format column names for LaTeX
-    colnames(df_table) <- format_colnames(colnames(df_table))
-    rownames(df_table) <- format_colnames(rownames(df_table))
-    
-    # Create xtable object
-    xtable_obj <- xtable(df_table, caption = paste("Regression results for", var, "-", coef_name))
-    
-    # Write the LaTeX code to the file
-    print(xtable_obj, file = file_conn, sanitize.text.function = identity, include.rownames = TRUE, caption.placement = "top")
-    cat("\n\n", file = file_conn, append = TRUE)
   }
-  
-  close(file_conn)
-  cat("Regression results for", var, "saved to", output_file, "\n")
+  print(combined_matrix)
+  return(combined_matrix)
 }
 
-# Create a LaTeX file for the intercept t-statistics
-for (var in variables) {
-  intercept_output_file <- paste0("tables/data/table4_", var, "_intercept_t_stats.tex")
-  file_conn <- file(intercept_output_file, open = "wt")
+# Combine t-stat results into 5x15 matrices
+combine_t_stats <- function(coef_name) {
+  combined_matrix <- matrix(NA, nrow = 5, ncol = 15)
+  colnames(combined_matrix) <- c(paste0("bm_", 1:5), paste0("op_", 1:5), paste0("inv_", 1:5))
+  rownames(combined_matrix) <- paste0("SIZE_", 1:5)
   
-  intercept_matrix <- intercept_t_stats[[paste0(var, "_(Intercept)_t_value")]]
-  
-  # Convert the matrix to a data frame for xtable
-  df_intercept <- as.data.frame(intercept_matrix, stringsAsFactors = FALSE)
-  
-  # Format column names for LaTeX
-  colnames(df_intercept) <- format_colnames(colnames(df_intercept))
-  rownames(df_intercept) <- format_colnames(rownames(df_intercept))
-  
-  # Create xtable object
-  xtable_obj <- xtable(df_intercept, caption = paste("Intercept t-statistics for", var))
-  
-  # Write the LaTeX code to the file
-  print(xtable_obj, file = file_conn, sanitize.text.function = identity, include.rownames = TRUE, caption.placement = "top")
-  cat("\n\n", file = file_conn, append = TRUE)
-  
-  close(file_conn)
-  cat("Intercept t-statistics for", var, "saved to", intercept_output_file, "\n")
+  for (var in variables) {
+    start_col <- match(paste0(var, "_1"), colnames(combined_matrix))
+    end_col <- start_col + 4
+    combined_matrix[, start_col:end_col] <- t_test_results[[paste0(var, "_", coef_name, "_t_value")]]
+  }
+  return(combined_matrix)
 }
+
+# Function to format a string by wrapping the part after the underscore in curly braces if it contains an underscore
+format_string_if_contains_underscore <- function(string) {
+  if (grepl("_", string)) {
+    parts <- strsplit(string, "_")[[1]]
+    return(paste0(parts[1], "_{", parts[2], "}"))
+  } else {
+    return(string)  # Return the original string if it does not contain an underscore
+  }
+}
+
+# Generate the LaTeX code with bold formatting for significant coefficients
+generate_latex_table <- function(coef_name, combined_matrix, t_test_matrix) {
+  name <- format_string_if_contains_underscore(coef_name)
+  body <- paste0(" & \\multicolumn{5}{c|}{$", name, "$} & \\multicolumn{5}{c|}{$", name, "$} & \\multicolumn{5}{c}{$", name, "$} \\\\\n")
+  rownames <- c("Small", "2", "3", "4", "Big")
+  for (i in 1:5) {
+    body <- paste0(body, rownames[i], " & ")
+    for (j in 1:15) {
+      value <- combined_matrix[i, j]
+      if (!is.na(t_test_matrix[i, j]) && abs(t_test_matrix[i, j]) > 1.96) {
+        value <- paste0("\\textbf{", value, "}")
+      }
+      body <- paste0(body, value)
+      if (j %% 5 == 0 && j != 15) {
+        body <- paste0(body, " & ")
+      } else if (j != 15) {
+        body <- paste0(body, " & ")
+      }
+    }
+    body <- paste0(body, " \\\\\n")
+  }
+  return(body)
+}
+
+# Write the LaTeX code to a file
+output_file <- "tables/regression_results.tex"
+file_conn <- file(output_file, open = "wt")
+
+header <- "\\begin{table}[H]\n\\tiny\n\\centering\n\\begin{tabular}{lccccc|ccccc|ccccc}\n\\hline\n& \\multicolumn{15}{c}{Five Factors} \\\\ \\hline\n& \\multicolumn{15}{c}{\\tiny $R_{i,t} - R_{F,t} = \\alpha_i+\\beta_i*MKT_{R,t} + \\phi_iSIZE_{R,t}+\\pi_iBM_{R,t} + \\delta_iOP_{R,t}+\\gamma_iINV_{R,t} + \\epsilon_{i,t}$} \\\\ \\hline\nLiquidity & \\multicolumn{5}{c|}{\\textbf{Panel A: BM}} & \\multicolumn{5}{c|}{\\textbf{Panel B: OP}} & \\multicolumn{5}{c}{\\textbf{Panel C: INV}} \\\\\nQuintiles & Low & 2 & 3 & 4 & High & Low & 2 & 3 & 4 & High & Low & 2 & 3 & 4 & High \\\\  \\hline\n"
+footer <- "\\end{tabular}\n\\end{table}\n"
+
+cat(header, file = file_conn)
+
+for (coef_name in c("(Intercept)", "r_mkt", "SMB", "HML", "RMW", "CMA")) {
+  combined_matrix <- combine_results(coef_name)
+  t_test_matrix <- combine_t_stats(coef_name)
+  latex_table <- generate_latex_table(coef_name, combined_matrix, t_test_matrix)
+  cat(latex_table, file = file_conn)
+}
+
+# Add R_squared separately since it doesn't have t-values
+combined_matrix <- combine_results("R_squared")
+latex_table <- generate_latex_table("R_squared", combined_matrix, matrix(NA, nrow = 5, ncol = 15))
+cat(latex_table, file = file_conn)
+
+cat(footer, file = file_conn, append = TRUE)
+
+close(file_conn)
+cat("Regression results saved to", output_file, "\n")
+

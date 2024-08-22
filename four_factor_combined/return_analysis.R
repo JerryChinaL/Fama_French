@@ -1,3 +1,5 @@
+rm(list = ls())
+
 library(readxl)
 library(dplyr)
 
@@ -11,7 +13,7 @@ ret <- mthcap %>%
   filter(MCALDT > start_date & !is.na(MTHRET)) %>%
   distinct()
 
-alllinks <- read_excel("../mkt_cap/data/alllinks_link.xlsx")
+alllinks <- read_excel("../mkt_cap/data/alllinks2_link.xlsx")
 
 # Filter allinks based on end dates and existing PERMNOs
 alllinks_filtered <- alllinks %>%

@@ -1,9 +1,17 @@
+rm(list = ls())
+
 library(dplyr)
 library(tidyr)
 
+min_date <- as.Date("1963-07-01")
+max_date <- as.Date("2013-12-31")
+
+min_date <- as.Date("1900-07-01")
+max_date <- as.Date("2099-12-31")
+
 # Load the data
 factors <- readRDS("data/portfolios_w_return.rds") %>%
-  select(KYPERMNO, KYGVKEY, monthly_date, PRIMEXCH, MTHRET, SIZE, bm, op, inv)
+  select(KYPERMNO, KYGVKEY, monthly_date = YYYYMM, PRIMEXCH, MTHRET, SIZE, bm, op, inv)
 
 # Define the function to assign portfolios
 assign_portfolio <- function(data, sorting_variable, percentiles) {
@@ -50,24 +58,24 @@ portfolios_5x5 <- factors %>%
   select(KYPERMNO, YYYYMM = monthly_date, MTHRET, SIZE, portfolio_SIZE, portfolio_bm, portfolio_op, portfolio_inv)
 
 # Convert YYYYMM to Date format
-portfolios_5x5 <- portfolios_5x5 %>% mutate(YYYYMM = as.Date(paste0(YYYYMM, "-01")))
+portfolios_5x5 <- portfolios_5x5 %>% mutate(YYYYMM = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"))
 
 # Add the excess return column by appending rf rate then subtracting.
 rf_data <- read.csv("data/monthly_rf.csv")
 portfolios_5x5 <- portfolios_5x5 %>% 
-  mutate(rf_date = format(as.Date(YYYYMM), "%Y%m")) %>%
+  mutate(rf_date = format(YYYYMM, "%Y%m")) %>%
   left_join(rf_data %>% mutate(rf_date = as.character(X)) %>% select(rf_date, RF), by = c("rf_date")) %>%
   select(-c(rf_date)) %>%
   mutate(MTHRET = MTHRET - (RF / 100))
 
 # List of variables to loop through
-variables <- c("op", "inv", "bm")
+variables <- c("bm","op", "inv")
 
 for (var in variables) {
   # Filter for non-NA values at the beginning of the loop
   portfolios_5x5_filtered <- portfolios_5x5 %>%
     filter(!is.na(!!sym(paste0("portfolio_", var))) & !is.na(SIZE) & !is.na(MTHRET),
-           YYYYMM >= as.Date("1963-07-01") & YYYYMM <= as.Date("2013-12-31"))
+           YYYYMM >= min_date & YYYYMM <= max_date)
   
   # Calculate the average monthly return for each quantile pair for each month
   monthly_grid <- portfolios_5x5_filtered %>%
@@ -167,12 +175,6 @@ for (var in variables) {
 
 # Create the LaTeX code for the entire table
 output <- paste0("
-\\documentclass{article}
-\\usepackage{geometry}
-\\geometry{letterpaper, margin=1in}
-\\usepackage{array}
-\\usepackage{booktabs}
-\\begin{document}
 
 \\begin{tabular}{p{1.8cm} p{1.2cm} p{1.2cm} p{1.2cm} p{1.2cm} p{1.2cm} p{1.2cm} p{1.2cm} p{1.2cm} p{1.2cm} p{1cm}}
  \\hline
@@ -182,7 +184,6 @@ output <- paste0("
  \\hline
 \\end{tabular}
 
-\\end{document}
 ")
 
 # Print the output

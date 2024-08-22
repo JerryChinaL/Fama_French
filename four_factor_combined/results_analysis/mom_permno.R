@@ -1,3 +1,5 @@
+rm(list = ls())
+
 library(dplyr)
 library(zoo)
 library(lubridate)

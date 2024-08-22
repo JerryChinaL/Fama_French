@@ -1,10 +1,12 @@
+rm(list = ls())
+
 library(dplyr)
 library(readxl)
 
 mthret <- read.csv("data/mthret.csv")
 exch <- readRDS("../mkt_cap/data/sfz_agg_mth_short.rds") %>% 
   select(KYPERMNO, YYYYMM, PRIMEXCH)
-primiss_files <- c("6070", "7078", "7885", "8590", "9095", "9500", "0004", "0408", "p0812", "p1216","p1620","p2023")
+primiss_files <- c("6070", "7078", "7885", "8590", "9095", "9500", "0004", "0408", "p0812", "p1216","p1620","p2023", "p2324")
 primiss_files <- paste0("primiss/", primiss_files, "_ms.xlsx")
 primiss <- bind_rows(lapply(primiss_files, read_excel))
 
@@ -38,6 +40,8 @@ mthret <- mthret %>%
   ) %>%
   select(KYPERMNO, KYGVKEY, sort_date, MTHRET, return_date = MCALDT, PRIMEXCH, YYYYMM)
 
+
+
 permno_data <- mthret %>%
   filter(round(YYYYMM %% 100) == 7)
 
@@ -45,7 +49,12 @@ permno_data <- mthret %>%
 final_df <- readRDS("data/four_factors.rds") %>%
   filter(!is.na(SIZE))
 
+# final_df %>%
+#   filter(!is.na(inv)) %>%
+#   View("dd")
+
 final_df_extended <- permno_data %>%
+  mutate(sort_date = as.Date(sort_date)) %>%
   select(-c("MTHRET")) %>%
   left_join(final_df, by = c("KYGVKEY", "sort_date"))
 
@@ -88,12 +97,16 @@ portfolios <- final_df_extended %>%
     )
   ) %>%
   ungroup() %>%
-  select(KYPERMNO, KYGVKEY, sort_date, return_date, portfolio_size, portfolio_bm,portfolio_op, portfolio_inv, SIZE)
+  select(-YYYYMM)
+# %>%
+  # select(KYPERMNO, PRIMEXCH, KYGVKEY, sort_date, return_date, portfolio_size, portfolio_bm,portfolio_op, portfolio_inv, SIZE)
 
 portfolios_w_return <- mthret %>%
   select(KYPERMNO, KYGVKEY, sort_date, MTHRET, YYYYMM) %>%
-  left_join(portfolios, by = c("KYPERMNO", "KYGVKEY", "sort_date")) %>%
-  select(KYPERMNO, KYGVKEY, YYYYMM, MTHRET, portfolio_size, portfolio_bm, portfolio_op, portfolio_inv, SIZE)
+  mutate(sort_date = as.Date(sort_date)) %>%
+  left_join(portfolios, by = c("KYPERMNO", "KYGVKEY", "sort_date")) 
+# %>%
+#   select(KYPERMNO, KYGVKEY, PRIMEXCH, YYYYMM, MTHRET, portfolio_size, portfolio_bm, portfolio_op, portfolio_inv, SIZE)
 
 # add the excess return column by appending rf rate then subtracting.
 rf_data <- read.csv("../monthly_rf.csv")
@@ -106,11 +119,7 @@ portfolios_w_return <- portfolios_w_return %>%
 portfolios_w_return <- portfolios_w_return %>%
   left_join(n_stocks, by = c("KYGVKEY", "YYYYMM"))
 
-portfolios_w_return %>% 
-  group_by(KYPERMNO, YYYYMM) %>%
-  filter(n() > 1) %>%
-  ungroup() %>%
-  View("final dup")
+saveRDS(portfolios_w_return, "data/portfolios_w_return.rds")
 
 # Calculate the factors according to the provided formula using weighted mean with SIZE
 factors_replicated <- portfolios_w_return %>%
@@ -154,7 +163,8 @@ factors_replicated <- portfolios_w_return %>%
     RMW = RMW * 100,
     CMA = CMA * 100
   ) %>%
-  select(YYYYMM, SMB, HML, RMW, CMA)
+  select(YYYYMM, SMB, HML, RMW, CMA, SMB_bm, SMB_op, SMB_inv) %>%
+  mutate(YYYYMM = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"))
 
 # View the replicated factors
 print(head(factors_replicated))

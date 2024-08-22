@@ -1,7 +1,15 @@
+rm(list = ls())
+
 library(dplyr)
 
+min_Date = as.Date("1963-07-01")
+max_Date = as.Date("2013-12-31")
+
+min_date <- as.Date("1900-07-01")
+max_date <- as.Date("2099-12-31")
+
 # Load the factors data
-factors_replicated <- read.csv("data/ff5_vol.csv") %>%
+factors_replicated <- read.csv("data/ff5.csv") %>% # SMB is VOL in ff5_vol.csv
   mutate(monthly_date = as.Date(as.character(YYYYMM))) %>%
   select(monthly_date, SMB, HML, RMW, CMA, SMB_bm, SMB_op, SMB_inv)
 
@@ -11,7 +19,7 @@ rf_data <- read.csv("data/monthly_rf.csv") %>%
 
 factors_filtered <- factors_replicated %>%
   left_join(rf_data, by = "monthly_date") %>%
-  filter(monthly_date >= as.Date("1968-01-01") & monthly_date <= as.Date("2018-12-31"))
+  filter(monthly_date >= min_Date & monthly_date <= max_Date)
 
 # Calculate summary statistics
 mean_HML <- mean(factors_filtered$HML, na.rm = TRUE)
@@ -61,16 +69,6 @@ cor_matrix_SMB_factors_formatted <- apply(cor_matrix_SMB_factors, 2, function(x)
 
 # LaTeX Table Generation
 latex_output <- paste0("
-\\documentclass{article}
-\\usepackage{geometry}
-\\geometry{letterpaper, margin=1in}
-\\usepackage{array}
-\\usepackage{booktabs}
-\\usepackage{float}
-
-\\begin{document}
-
-Factor return summary 1968-2018
 
 \\begin{table}[H]
 \\small
@@ -103,11 +101,7 @@ $SMB$ & ", paste(cor_matrix_SMB_factors_formatted[4, ], collapse = " & "), " \\\
 \\end{tabular}
 \\end{table}
 
-\\end{document}
 ")
-
-# Print the LaTeX table
-cat(latex_output)
 
 # Print Panel A
 cat("Panel A: Summary Statistics of the Five Factors\n")
@@ -125,3 +119,6 @@ print(cor_matrix_SMB_factors)
 write.csv(summary_stats_table, "tables/data/table3_Panel_A_Summary_Statistics.csv", row.names = FALSE)
 write.csv(cor_matrix_five_factors, "tables/data/table3_Panel_B_Correlation_Matrix_Five_Factors.csv")
 write.csv(cor_matrix_SMB_factors, "tables/data/table3_Panel_C_Correlation_Matrix_SMB_Sub_Factors.csv")
+
+# Print the LaTeX table
+cat(latex_output)

@@ -1,5 +1,13 @@
+rm(list = ls())
+
 library(dplyr)
 library(xtable)
+
+min_date <- as.Date("1963-07-01")
+max_date <- as.Date("2013-12-31")
+
+min_date <- as.Date("1913-07-01")
+max_date <- as.Date("2093-12-31")
 
 # Load the data
 factors <- readRDS("data/portfolios_w_return.rds")
@@ -15,7 +23,7 @@ rf_data <- read.csv("data/monthly_rf.csv") %>%
 
 r_factors <- factors_replicated %>%
   left_join(rf_data, by = "monthly_date") %>%
-  filter(monthly_date >= as.Date("1968-01-01") & monthly_date <= as.Date("2018-12-31"))
+  filter(monthly_date >= min_date & monthly_date <= max_date)
 
 # Initialize matrices for coefficients and t-statistics
 variables <- c("r_mkt", "SMB", "HML", "RMW", "CMA")

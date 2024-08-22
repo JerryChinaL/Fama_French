@@ -1,4 +1,4 @@
-
+rm(list=ls())
 ###################
 
 # This file is used to calculate the book equity, operating profitability, and investment factors
@@ -11,10 +11,10 @@ library(tidyr)
 
 directory = "data/"
 
-she <- read_excel(file.path(directory, "she_ai.xlsx"))
-pef <- read_excel(file.path(directory, "pef_ai.xlsx"))
-txditc <- read_excel(file.path(directory, "txditc_ai.xlsx"))
-op1 <- read_excel(file.path(directory, "op1_ai.xlsx"))
+she <- read_excel(file.path(directory, "she2_ai.xlsx"))
+pef <- read_excel(file.path(directory, "pef2_ai.xlsx"))
+txditc <- read_excel(file.path(directory, "txditc2_ai.xlsx"))
+op1 <- read_excel(file.path(directory, "op12_ai.xlsx"))
 
 pef <- pef %>%
   mutate(pef = coalesce(PSTKRV, PSTKL, PSTKR, PSTKN, 0))
@@ -78,7 +78,7 @@ duplicate_rows <- book_equity_df %>%
   filter(n() > 1) %>%
   ungroup()
 
-write.csv(book_equity_df, "data/be_op_in.csv", row.names = FALSE)
+saveRDS(book_equity_df, "data/be_op_in.rds")
 
 # View(book_equity_df %>% filter(KYGVKEY == 2176))
 # 

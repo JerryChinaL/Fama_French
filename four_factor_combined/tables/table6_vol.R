@@ -1,12 +1,20 @@
+rm(list=ls())
+
 library(dplyr)
 library(GRS.test)
 library(xtable)
+
+min_date <- as.Date("1963-07-01")
+max_date <- as.Date("2013-12-31")
+
+min_date <- as.Date("1911-07-01")
+max_date <- as.Date("2055-12-31")
 
 # Function to perform GRS test and extract results
 perform_grs_test <- function(file_path, factor_sets) {
   # Load the portfolio returns and factors data
   portfolio_returns <- readRDS(file_path) %>%
-    filter(YYYYMM >= as.Date("1968-01-01") & YYYYMM <= as.Date("2018-12-31"))
+    filter(YYYYMM >= min_date & YYYYMM <= max_date)
   
   # Remove rows with missing values
   portfolio_returns <- portfolio_returns %>%
@@ -54,8 +62,7 @@ perform_grs_test <- function(file_path, factor_sets) {
     
     # Prepare the results for the current factor set
     results <- data.frame(
-      file = basename(file_path),
-      factor_set = paste(factor_sets[[i]], collapse = ", "),
+      factor_set = paste(factor_sets[[i]][-1], collapse = ","),
       GRS_stat = round(grs_stat, 2),
       GRS_pval = round(grs_pval, 3),
       avg_abs_intercept = round(avg_abs_intercept, 3),

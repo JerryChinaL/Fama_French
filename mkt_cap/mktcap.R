@@ -1,3 +1,5 @@
+rm(list=ls())
+
 library(readxl)
 library(dplyr)
 library(ggplot2)
@@ -21,17 +23,17 @@ calculate_yyyymm_vectorized <- function(FYYYYQ, FYRQ, data_source = NULL) {
 View(mthcap %>% filter(TICKER == "AAPL"))
 
 # read cshoq
-file_names <- c("cshoq_5070_qi.xlsx", "cshoq_7090_qi.xlsx", "cshoq9008_qi.xlsx", "cshoq0823_qi.xlsx") #2650 empty
+file_names <- c("cshoq_5070_qi.xlsx", "cshoq_7090_qi.xlsx", "cshoq9008_qi.xlsx", "cshoq0824_qi.xlsx") #2650 empty
 file_names <- paste0("data/cshoq_data/", file_names)
 cshoq <- bind_rows(lapply(file_names, read_excel))
 
 # Read prccm
-file_names <- c("6075_ms.xlsx", "7585_ms.xlsx", "8592_ms.xlsx", "ab9296_ms.xlsx", "ab9600_ms.xlsx", "ab0004_ms.xlsx", "ab0408_ms.xlsx", "ab0812_ms.xlsx", "ab1216_ms.xlsx", "ab1620_ms.xlsx", "ab10_23_ms.xlsx")
+file_names <- c("6075_ms.xlsx", "7585_ms.xlsx", "8592_ms.xlsx", "ab9296_ms.xlsx", "ab9600_ms.xlsx", "ab0004_ms.xlsx", "ab0408_ms.xlsx", "ab0812_ms.xlsx", "ab1216_ms.xlsx", "ab1620_ms.xlsx", "ab2022_ms.xlsx", "ab2224_ms.xlsx")
 file_names <- paste0("data/prccm_data/", file_names)
 prccm <- bind_rows(lapply(file_names, read_excel))
 
 # Read mkvaltq, mthcap, and alllinks
-mkvaltq <- read_excel("data/mkvaltlong_imkt.xlsx")
+mkvaltq <- read_excel("data/mkvalt2_imkt.xlsx")
 mthcap <- readRDS("data/sfz_agg_mth_short.rds")
 alllinks <- read_excel("data/alllinks_link.xlsx")
 
@@ -102,96 +104,96 @@ mthcap <- mthcap_filtered %>%
   ) %>%
   ungroup()
 
-# Union of FYRQ from cshoq and mkvaltq
-fyrq_union <- full_join(cshoq %>% select(KYGVKEY, YYYYMM, FYRQ),
-                        mkvaltq %>% select(KYGVKEY, YYYYMM, FYRQ), 
-                        by = c("KYGVKEY", "YYYYMM")) %>%
-  mutate(FYRQ = coalesce(FYRQ.x, FYRQ.y)) %>%
-  select(KYGVKEY, YYYYMM, FYRQ) %>%
-  distinct()  # Ensure no duplicate rows
-
-# Create the plots directory and subdirectories if they don't exist
-if (!dir.exists("plots")) {
-  dir.create("plots")
-}
-for (i in 1:12) {
-  if (!dir.exists(paste0("plots/", i))) {
-    dir.create(paste0("plots/", i))
-  }
-}
+# # Union of FYRQ from cshoq and mkvaltq
+# fyrq_union <- full_join(cshoq %>% select(KYGVKEY, YYYYMM, FYRQ),
+#                         mkvaltq %>% select(KYGVKEY, YYYYMM, FYRQ), 
+#                         by = c("KYGVKEY", "YYYYMM")) %>%
+#   mutate(FYRQ = coalesce(FYRQ.x, FYRQ.y)) %>%
+#   select(KYGVKEY, YYYYMM, FYRQ) %>%
+#   distinct()  # Ensure no duplicate rows
+# 
+# # Create the plots directory and subdirectories if they don't exist
+# if (!dir.exists("plots")) {
+#   dir.create("plots")
+# }
+# for (i in 1:12) {
+#   if (!dir.exists(paste0("plots/", i))) {
+#     dir.create(paste0("plots/", i))
+#   }
+# }
 
 cshoq <- cshoq %>% select(KYGVKEY, YYYYMM, CSHOQ) %>% distinct(KYGVKEY, YYYYMM, .keep_all = TRUE)
-prccm <- prccm %>% select(KYGVKEY, YYYYMM, PRCCM) %>% distinct()
+prccm <- prccm %>% select(KYGVKEY, YYYYMM, PRCCM) %>% distinct(KYGVKEY, YYYYMM, .keep_all = TRUE)
 mthcap <- mthcap %>% select(KYGVKEY, YYYYMM, MTHCAP) %>% distinct()
 mkvaltq <- mkvaltq %>% select(KYGVKEY, YYYYMM, MKVALTQ) %>% distinct(KYGVKEY, YYYYMM, .keep_all = TRUE)
 
-# Generate plot data for each KYGVKEY
-generate_plot_data <- function(gvkey) {
-  cshoq_data <- cshoq %>% filter(KYGVKEY == gvkey)
-  prccm_data <- prccm %>% filter(KYGVKEY == gvkey)
-  mthcap_data <- mthcap %>% filter(KYGVKEY == gvkey)
-  mkvaltq_data <- mkvaltq %>% filter(KYGVKEY == gvkey)
-  
-  combined_data <- full_join(cshoq_data, prccm_data, by = c("KYGVKEY", "YYYYMM")) %>%
-    full_join(., mthcap_data, by = c("KYGVKEY", "YYYYMM")) %>%
-    full_join(., mkvaltq_data, by = c("KYGVKEY", "YYYYMM")) %>%
-    full_join(., fyrq_union %>% filter(KYGVKEY == gvkey), by = c("KYGVKEY", "YYYYMM"))
-  
-  combined_data <- combined_data %>%
-    mutate(CSHOQ_PRCCM = CSHOQ * PRCCM)
-  
-  return(combined_data)
-}
+# # Generate plot data for each KYGVKEY
+# generate_plot_data <- function(gvkey) {
+#   cshoq_data <- cshoq %>% filter(KYGVKEY == gvkey)
+#   prccm_data <- prccm %>% filter(KYGVKEY == gvkey)
+#   mthcap_data <- mthcap %>% filter(KYGVKEY == gvkey)
+#   mkvaltq_data <- mkvaltq %>% filter(KYGVKEY == gvkey)
+#   
+#   combined_data <- full_join(cshoq_data, prccm_data, by = c("KYGVKEY", "YYYYMM")) %>%
+#     full_join(., mthcap_data, by = c("KYGVKEY", "YYYYMM")) %>%
+#     full_join(., mkvaltq_data, by = c("KYGVKEY", "YYYYMM")) %>%
+#     full_join(., fyrq_union %>% filter(KYGVKEY == gvkey), by = c("KYGVKEY", "YYYYMM"))
+#   
+#   combined_data <- combined_data %>%
+#     mutate(CSHOQ_PRCCM = CSHOQ * PRCCM)
+#   
+#   return(combined_data)
+# }
+# 
+# # Loop through each gvkey and generate plots unique(mthcap$KYGVKEY)
+# plot_count <- 0
+# for (gvkey in c(1076)) {
+#   if (plot_count >= 200) break
+#   
+#   plot_data <- generate_plot_data(gvkey)
+#   
+#   fyrq_values <- unique(plot_data$FYRQ)
+#   for (fyrq in fyrq_values) {
+#     fyrq_data <- plot_data %>% filter(FYRQ == fyrq)
+#     
+#     if (nrow(fyrq_data) == 0) next
+#     
+#     # Create the plot
+#     p <- ggplot(fyrq_data, aes(x = as.Date(paste0(YYYYMM, "01"), "%Y%m%d"))) +
+#       geom_line(aes(y = MKVALTQ, color = "MKVALTQ"), linewidth = 1) +
+#       geom_line(aes(y = MTHCAP, color = "MTHCAP"), linewidth = 1) +
+#       geom_line(aes(y = CSHOQ_PRCCM, color = "CSHOQ * PRCCM"), linewidth = 1) +
+#       labs(title = paste("MKVALTQ, MTHCAP, and CSHOQ * PRCCM for KYGVKEY", gvkey, "FYRQ", fyrq),
+#            x = "Date",
+#            y = "Value (in thousands)",
+#            color = "Legend") +
+#       theme_minimal()
+#     
+#     # Check if directory exists before saving
+#     dir_path <- paste0("plots/", fyrq)
+#     if (!dir.exists(dir_path)) {
+#       dir.create(dir_path)
+#     }
+#     
+#     # Save the plot
+#     plot_file <- paste0(dir_path, "/plot_", gvkey, ".png")
+#     ggsave(filename = plot_file, plot = p, width = 10, height = 6)
+#     
+#     plot_count <- plot_count + 1
+#   }
+# } 
+# 
+# find_duplicates <- function(df, keys) {
+#   df %>%
+#     group_by(across(all_of(keys))) %>%
+#     filter(n() > 1) %>%
+#     ungroup()
+# }
+# 
+# # Only prccm has many duplicates (due to multiple stocks), about 0.8m out of 3.8m
+# prccm_duplicates <- find_duplicates(prccm, c("KYGVKEY", "YYYYMM"))
 
-# Loop through each gvkey and generate plots unique(mthcap$KYGVKEY)
-plot_count <- 0
-for (gvkey in c(1076)) {
-  if (plot_count >= 200) break
-  
-  plot_data <- generate_plot_data(gvkey)
-  
-  fyrq_values <- unique(plot_data$FYRQ)
-  for (fyrq in fyrq_values) {
-    fyrq_data <- plot_data %>% filter(FYRQ == fyrq)
-    
-    if (nrow(fyrq_data) == 0) next
-    
-    # Create the plot
-    p <- ggplot(fyrq_data, aes(x = as.Date(paste0(YYYYMM, "01"), "%Y%m%d"))) +
-      geom_line(aes(y = MKVALTQ, color = "MKVALTQ"), linewidth = 1) +
-      geom_line(aes(y = MTHCAP, color = "MTHCAP"), linewidth = 1) +
-      geom_line(aes(y = CSHOQ_PRCCM, color = "CSHOQ * PRCCM"), linewidth = 1) +
-      labs(title = paste("MKVALTQ, MTHCAP, and CSHOQ * PRCCM for KYGVKEY", gvkey, "FYRQ", fyrq),
-           x = "Date",
-           y = "Value (in thousands)",
-           color = "Legend") +
-      theme_minimal()
-    
-    # Check if directory exists before saving
-    dir_path <- paste0("plots/", fyrq)
-    if (!dir.exists(dir_path)) {
-      dir.create(dir_path)
-    }
-    
-    # Save the plot
-    plot_file <- paste0(dir_path, "/plot_", gvkey, ".png")
-    ggsave(filename = plot_file, plot = p, width = 10, height = 6)
-    
-    plot_count <- plot_count + 1
-  }
-} 
-
-find_duplicates <- function(df, keys) {
-  df %>%
-    group_by(across(all_of(keys))) %>%
-    filter(n() > 1) %>%
-    ungroup()
-}
-
-# Only prccm has many duplicates (due to multiple stocks), about 0.8m out of 3.8m
-prccm_duplicates <- find_duplicates(prccm, c("KYGVKEY", "YYYYMM"))
-
-combined_data <- full_join(cshoq, prccm, by = c("KYGVKEY", "YYYYMM")) %>%
+combined_data <- inner_join(cshoq, prccm, by = c("KYGVKEY", "YYYYMM")) %>%
   full_join(., mthcap, by = c("KYGVKEY", "YYYYMM")) %>%
   full_join(., mkvaltq, by = c("KYGVKEY", "YYYYMM"))
 
@@ -199,8 +201,4 @@ combined_data <- combined_data %>%
   mutate(CSHOQ_PRCCM = CSHOQ * PRCCM) %>%
   distinct()
 
-multiple_gvkeys <- combined_data %>%
-  group_by(KYGVKEY, YYYYMM) %>%
-  filter(n() > 1)
-
-write.csv(combined_data, "mktcap_combined.csv", row.names = FALSE)
+saveRDS(combined_data, "mktcap_combined.rds")

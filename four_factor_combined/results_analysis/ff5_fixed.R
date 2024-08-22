@@ -1,8 +1,9 @@
+rm(list=ls())
 library(dplyr)
 library(readxl)
 library(lubridate)
 
-primiss <- readRDS("../../ELM/data/primiss.rds") %>%
+primiss <- readRDS("../four_factor_combined/data/primiss.rds") %>%
   mutate(monthly_date = floor_date(DATADATE, "month")) %>%
   filter(PRIMISS == "P") %>%
   distinct()
@@ -18,7 +19,7 @@ mkt_data <- mkt_data %>%
   mutate(monthly_date = monthly_date + months(1)) %>%
   right_join(mkt_data %>% select(-VOL), by = c("KYPERMNO", "monthly_date")) %>%
   select(PRIMEXCH, VOL, MTHRET, monthly_date, KYPERMNO) %>%
-  inner_join(primiss %>% select(monthly_date, KYGVKEY, KYPERMNO), by = c("monthly_date", "KYPERMNO"))
+  inner_join(primiss %>% select(monthly_date, KYGVKEY, KYPERMNO) %>% distinct(), by = c("monthly_date", "KYPERMNO"))
 
 mkt_data <- mkt_data %>%
   mutate(
@@ -39,6 +40,7 @@ mkt_data_july <- mkt_data %>%
 final_df <- readRDS("data/four_factors.rds")
 
 final_df_extended <- mkt_data_july %>%
+  mutate(sort_date = as.Date(sort_date)) %>%
   left_join(final_df, by = c("KYGVKEY", "sort_date"))
 
 # Define the function to assign portfolios
@@ -88,19 +90,20 @@ portfolios <- final_df_extended %>%
   select(KYPERMNO, KYGVKEY, sort_date, portfolio_size, portfolio_bm, portfolio_op, portfolio_inv, portfolio_vol, bm, op, inv, VOL, SIZE)
 
 portfolios_w_return <- mkt_data %>%
-  left_join(portfolios, by = c("KYPERMNO", "KYGVKEY", "sort_date")) %>%
-  select(everything(), VOL = VOL.x, -VOL.y)
+  select(-VOL) %>%
+  mutate(sort_date = as.Date(sort_date)) %>%
+  left_join(portfolios, by = c("KYPERMNO", "KYGVKEY", "sort_date"))
 
 # add the excess return column by appending rf rate then subtracting.
 rf_data <- read.csv("../monthly_rf.csv")
-portfolios_w_return <- portfolios_w_return %>% 
+portfolios_w_return <- portfolios_w_return %>%
   left_join(rf_data %>% mutate(YYYYMM = ymd(paste0(X, "01"))) %>% select(YYYYMM, RF), by = c("monthly_date" = "YYYYMM")) %>%
   filter(!is.na(SIZE)) %>%
   # filter(!is.na(portfolio_bm) & !is.na(portfolio_size) & !is.na(portfolio_op) & !is.na(portfolio_inv)) %>%
   mutate(excess_return = MTHRET - (RF/100))
 
-# portfolios_w_return <- portfolios_w_return %>%
-#   select(everything(), -SIZE, -portfolio_size, SIZE = VOL, portfolio_size = portfolio_vol)
+portfolios_w_return <- portfolios_w_return %>%
+  mutate(SIZE = VOL, portfolio_size = portfolio_vol)
 
 saveRDS(portfolios_w_return, "data/portfolios_w_return.rds")
 
@@ -152,4 +155,4 @@ factors_replicated <- portfolios_w_return %>%
 print(head(factors_replicated))
 
 # Save the factors to a CSV file if needed
-write.csv(factors_replicated, "data/ff5.csv", row.names = FALSE)
+write.csv(factors_replicated, "data/ff5_vol_fixed.csv", row.names = FALSE)

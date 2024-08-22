@@ -1,3 +1,4 @@
+rm(list=ls())
 ##############
 # This file joins the be_op_inv output with the mktcap data to calculate the SIZE and bm factor.
 # It also joins with the mthret and rf-return data to calculate the excess return. 
@@ -8,8 +9,8 @@ library(readxl)
 library(dplyr)
 library(lubridate)
 
-mktcap <- read.csv("../mkt_cap/mktcap_combined.csv")
-book_equity_df <- read.csv("data/be_op_in.csv")
+mktcap <- readRDS("../mkt_cap/mktcap_combined.rds")
+book_equity_df <- readRDS("data/be_op_in.rds")
 
 size <- mktcap %>%
   mutate(
@@ -49,8 +50,9 @@ mkt_equity <- mktcap %>%
 
 # Full join (be, op, inv) and mktcap on KYGVKEY and YYYYMM
 combined_df <- size %>% 
+  mutate(sort_date = as.Date(sort_date)) %>%
   left_join(book_equity_df, by = c("KYGVKEY", "sort_date")) %>%
-  left_join(mkt_equity, by = c("KYGVKEY", "sort_date")) %>%
+  left_join(mkt_equity %>% mutate(sort_date = as.Date(sort_date)), by = c("KYGVKEY", "sort_date")) %>%
   mutate(bm = be1 / me)
 
 # filtered_combined_df <- combined_df %>%
