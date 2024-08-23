@@ -48,9 +48,6 @@ calc_cum_return <- function(returns) {
   return(cum_returns)
 }
 
-filtered_data_complete <- data_complete %>%
-  filter(KYPERMNO == 10014)
-
 # Apply the function to calculate cumulative returns
 data_complete <- data_complete %>%
   group_by(KYPERMNO) %>%
@@ -109,8 +106,10 @@ data_complete <- data_complete %>%
     size_portfolio = assign_size_portfolio(pick(everything()))
   ) %>%
   ungroup() %>%
-  select(permno = KYPERMNO, sort_date, momentum_portfolio, size_portfolio, MTHRET, MTHCAP) %>%
+  select(permno = KYPERMNO, sort_date, cum_ret = cum_11_month_return, momentum_portfolio, size_portfolio, MTHRET, MTHCAP) %>%
   mutate(YYYYMM = format(sort_date, "%Y%m"))
+
+saveRDS(data_complete, "data/mom_variables.rds")
 
 # Calculate the momentum factor according to the provided formula using weighted mean
 momentum_factors_permno <- data_complete %>%

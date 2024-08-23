@@ -5,7 +5,7 @@ boi <-  read.csv("be_op_in.csv")
 boi_filtered <- boi%>% filter(KYGVKEY == 1050)
 
 # Load your data
-fund <- read.csv("be_op_in.csv") %>%2
+fund <- read.csv("be_op_in.csv") %>%
   filter(FYYYY == 2020) %>% 
   mutate(YYYYMM = sprintf("%04d%02d", FYYYY, FYRA)) %>%
   select(gvkey = KYGVKEY, YYYYMM, be1, op1, op2, at = AT, at_lag1, in. = inv)

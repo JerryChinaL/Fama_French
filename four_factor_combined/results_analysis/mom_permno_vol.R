@@ -1,3 +1,5 @@
+rm(list = ls())
+
 library(dplyr)
 library(zoo)
 library(lubridate)
@@ -6,15 +8,10 @@ library(tidyr)
 # Load your data
 data <- readRDS("../../old data/sfz_agg_mth.rds") %>%
   filter(PRIMEXCH %in% c("N", "A", "Q"), SHRCD %in% c(10,11)) %>%
-  select(KYPERMNO, MCALDT, YYYYMM, MTHCAP = MTHVOL, MTHRET, PRIMEXCH) %>%
+  mutate(MTHCAP = MTHVOL * MTHPRC) %>%
+  select(KYPERMNO, MCALDT, YYYYMM, MTHCAP, MTHRET, PRIMEXCH) %>%
   mutate(year_month = floor_date(MCALDT, unit = "month")) %>%
   unique()
-
-# data <- readRDS("../../old data/sfz_agg_mth.rds") %>%
-#   select(c("KYPERMNO", "MCALDT", "MTHCAP", "MTHRET","PRIMEXCH","SHRCD","YYYYMM")) %>%
-#   mutate(year_month = floor_date(MCALDT, unit = "month")) %>%
-#   filter(PRIMEXCH %in% c("N", "A", "Q") & SHRCD %in% c(10, 11)) %>% #
-#   unique()
 
 # Create a complete sequence of year_month for each stock
 complete_dates <- data %>%
@@ -107,8 +104,10 @@ data_complete <- data_complete %>%
     size_portfolio = assign_size_portfolio(pick(everything()))
   ) %>%
   ungroup() %>%
-  select(permno = KYPERMNO, sort_date, momentum_portfolio, size_portfolio, MTHRET, MTHCAP) %>%
+  select(permno = KYPERMNO, sort_date, cum_ret = cum_11_month_return,  momentum_portfolio, size_portfolio, MTHRET, MTHCAP) %>%
   mutate(YYYYMM = format(sort_date, "%Y%m"))
+
+saveRDS(data_complete, "data/mom_variables_vol.rds")
 
 # Calculate the momentum factor according to the provided formula using weighted mean
 momentum_factors_permno <- data_complete %>%

@@ -6,7 +6,6 @@ library(tidyr)
 min_date <- as.Date("1963-07-01")
 max_date <- as.Date("2013-12-31")
 
-min_date <- as.Date("1900-07-01")
 max_date <- as.Date("2099-12-31")
 
 # Load the data

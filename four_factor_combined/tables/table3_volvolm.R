@@ -5,21 +5,21 @@ library(dplyr)
 min_Date = as.Date("1963-07-01")
 max_Date = as.Date("2013-12-31")
 
-min_date <- as.Date("1900-07-01")
 max_date <- as.Date("2099-12-31")
 
 # Load the factors data
-factors_replicated <- read.csv("data/ff5_vol.csv") %>%
+factors_replicated <- read.csv("data/ff5.csv") %>%
   mutate(monthly_date = as.Date(as.character(YYYYMM))) %>%
   select(monthly_date, SMB, HML, RMW, CMA, SMB_bm, SMB_op, SMB_inv)
 
 # VOLM
-momentum <- readRDS("../../ELM/data/ELM-4-factors-replicated-nordq.rds") %>%
+momentum <- readRDS("../../ELM/data/ELM-4-factors-replicated-nordq2.rds") %>%
   select(monthly_date, MOM = r_volm)
 
 # Carhart MOM
 momentum <- read.csv("data/momentum_factor_permno_nd.csv") %>%
-  mutate(monthly_date = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"))
+  mutate(monthly_date = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"),
+         MOM = 100 * MOM)
 
 factors_replicated <- factors_replicated %>%
   left_join(momentum, by = "monthly_date")
