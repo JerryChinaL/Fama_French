@@ -8,7 +8,6 @@ library(xtable)
 date_min <- as.Date("1963-07-01")
 date_max <- as.Date("2013-12-31")
 
-date_min <- as.Date("1913-07-01")
 date_max <- as.Date("2093-12-31")
 
 # Load necessary libraries and data

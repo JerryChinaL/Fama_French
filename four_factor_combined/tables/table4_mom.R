@@ -1,4 +1,4 @@
-rm(list = ls())
+rm(list=ls())
 
 library(dplyr)
 library(tidyr)
@@ -11,13 +11,20 @@ date_max <- as.Date("2013-12-31")
 date_max <- as.Date("2093-12-31")
 
 # Load necessary libraries and data
-factors <- readRDS("data/portfolios_w_return.rds") %>%
+factors <- readRDS("data/portfolios_w_return_vol.rds") %>%
   mutate(monthly_date = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"))
+
+momentum <- read.csv("data/momentum_factor_permno_nd.csv") %>%
+  mutate(monthly_date = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"),
+         MOM = 100 * MOM)
 
 # Load the factors data
 factors_replicated <- read.csv("data/ff5.csv") %>%
   mutate(monthly_date = as.Date(YYYYMM)) %>%
   select(monthly_date, SMB, HML, RMW, CMA)
+
+factors_replicated <- factors_replicated %>%
+  left_join(momentum %>% select(-YYYYMM), by = "monthly_date")
 
 rf_data <- read.csv("data/monthly_rf.csv") %>%
   mutate(monthly_date = as.Date(as.character(X*100+1), format = "%Y%m%d")) %>%
@@ -80,7 +87,7 @@ portfolios_5x5 <- portfolios_5x5 %>%
   mutate(MTHRET = MTHRET * 100 - RF)
 
 # List of variables to loop through
-variables <- c("bm","op", "inv")
+variables <- c("op", "inv", "bm")
 
 # Initialize a list to store regression results
 regression_results <- list()
@@ -113,16 +120,16 @@ for (var in variables) {
   # Merge with r_factors
   joined_data <- monthly_grid_wide %>% left_join(r_factors, by = c("YYYYMM" = "monthly_date"))
   
-  saveRDS(joined_data, paste0("tables/data/table6_size_", var, "_ret.rds"))
+  saveRDS(joined_data, paste0("tables/data/table6_mom_", var, "_ret.rds"))
   
   # Perform regressions for each quantile pair
   reg_results <- lapply(names(joined_data)[2:26], function(quantile_col) {
-    formula <- as.formula(paste(quantile_col, "~ r_mkt + SMB + HML + RMW + CMA"))
+    formula <- as.formula(paste(quantile_col, "~ r_mkt + SMB + HML + RMW + CMA + MOM"))
     lm(formula, data = joined_data)
   })
   
   # Extract coefficients and organize into matrices
-  coef_names <- c("(Intercept)", "r_mkt", "SMB", "HML", "RMW", "CMA")
+  coef_names <- c("(Intercept)", "r_mkt", "SMB", "HML", "RMW", "CMA", "MOM")
   for (coef_name in coef_names) {
     coef_matrix <- matrix(nrow = 5, ncol = 5)
     t_test_matrix <- matrix(nrow = 5, ncol = 5)
@@ -224,7 +231,7 @@ generate_latex_table <- function(coef_name, combined_matrix, t_test_matrix) {
 }
 
 # Write the LaTeX code to a file
-output_file <- "tables/regression_results.tex"
+output_file <- "tables/regression_results_mom.tex"
 file_conn <- file(output_file, open = "wt")
 
 header <- "\\begin{table}[H]\n\\tiny\n\\centering\n\\begin{tabular}{lccccc|ccccc|ccccc}\n\\hline\n& \\multicolumn{15}{c}{Five Factors} \\\\ \\hline\n& \\multicolumn{15}{c}{\\tiny $R_{i,t} - R_{F,t} = \\alpha_i+\\beta_i*MKT_{R,t} + \\phi_iSIZE_{R,t}+\\pi_iBM_{R,t} + \\delta_iOP_{R,t}+\\gamma_iINV_{R,t} + \\epsilon_{i,t}$} \\\\ \\hline\nLiquidity & \\multicolumn{5}{c|}{\\textbf{Panel A: BM}} & \\multicolumn{5}{c|}{\\textbf{Panel B: OP}} & \\multicolumn{5}{c}{\\textbf{Panel C: INV}} \\\\\nQuintiles & Low & 2 & 3 & 4 & High & Low & 2 & 3 & 4 & High & Low & 2 & 3 & 4 & High \\\\  \\hline\n"
@@ -232,7 +239,7 @@ footer <- "\\end{tabular}\n\\end{table}\n"
 
 cat(header, file = file_conn)
 
-for (coef_name in c("(Intercept)", "r_mkt", "SMB", "HML", "RMW", "CMA")) {
+for (coef_name in c("(Intercept)", "r_mkt", "SMB", "HML", "RMW", "CMA", "MOM")) {
   combined_matrix <- combine_results(coef_name)
   t_test_matrix <- combine_t_stats(coef_name)
   latex_table <- generate_latex_table(coef_name, combined_matrix, t_test_matrix)
@@ -248,4 +255,3 @@ cat(footer, file = file_conn, append = TRUE)
 
 close(file_conn)
 cat("Regression results saved to", output_file, "\n")
-

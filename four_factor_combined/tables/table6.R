@@ -7,7 +7,6 @@ library(xtable)
 min_date <- as.Date("1963-07-01")
 max_date <- as.Date("2013-12-31")
 
-min_date <- as.Date("1913-07-01")
 max_date <- as.Date("2073-12-31")
 
 # Function to perform GRS test and extract results
@@ -53,7 +52,7 @@ perform_grs_test <- function(file_path, factor_sets) {
     column_means <- colMeans(ret.mat, na.rm = TRUE)
     temp_mystery <- column_means - overall_mean
     avg_return_deviation <- mean(temp_mystery^2)
-    dispersion_ratio <- avg_squared_intercept / avg_return_deviation
+    dispersion <- avg_squared_intercept / avg_return_deviation
     
     # Calculate the average of the intercept estimate sample variance
     intercept_variances <- stderr_matrix[, 1]^2
@@ -66,10 +65,12 @@ perform_grs_test <- function(file_path, factor_sets) {
       GRS_stat = round(grs_stat, 2),
       GRS_pval = round(grs_pval, 3),
       avg_abs_intercept = round(avg_abs_intercept, 3),
-      dispersion_ratio = round(dispersion_ratio, 2),
+      dispersion = round(dispersion, 2),
       avg_intercept_var_ratio = round(column_six, 2),
       avg_r_squared = round(mean(r2_matrix), 2)
     )
+    
+    colnames(results)[3] <- "p-val"
     
     # Append the results to the list
     all_results[[i]] <- results
@@ -86,11 +87,12 @@ factor_sets <- list(
   c("r_mkt", "SMB", "HML", "RMW"),
   c("r_mkt", "SMB", "HML", "CMA"),
   c("r_mkt", "SMB", "RMW", "CMA"),
-  c("r_mkt", "SMB", "HML", "RMW", "CMA")
+  c("r_mkt", "SMB", "HML", "RMW", "CMA"),
+  c("r_mkt", "SMB", "HML", "RMW", "CMA", "MOM")
 )
 
 # Define file paths
-file_paths <- c("tables/data/table6_size_op_ret.rds", "tables/data/table6_size_inv_ret.rds", "tables/data/table6_size_bm_ret.rds")
+file_paths <- c("tables/data/table6_mom_op_ret.rds", "tables/data/table6_mom_inv_ret.rds", "tables/data/table6_mom_bm_ret.rds")
 
 # Perform the GRS test for each file and combine the results
 all_final_results <- lapply(file_paths, perform_grs_test, factor_sets = factor_sets)
@@ -101,29 +103,12 @@ combined_results <- do.call(rbind, all_final_results)
 # Create an xtable object for LaTeX formatting
 table_latex <- xtable(combined_results)
 
-# Print the xtable object to LaTeX format
-print(table_latex)
-
 # Save results to a CSV file
 write.csv(combined_results, "tables/data/table6_combined_results.csv", row.names = FALSE)
 
 # Print the results for inspection
 print(combined_results)
+# Print the xtable object to LaTeX format
+print(table_latex)
 
-# Expected:
-# file                factor_set  GRS GRS.1 avg_abs_intercept dispersion_ratio avg_intercept_var_ratio avg_r_squared
-# 1   table6_size_op_ret.rds           r_mkt, SMB, HML 2.22 0.001             0.106             0.79                    0.31          0.90
-# 2   table6_size_op_ret.rds      r_mkt, SMB, HML, RMW 1.78 0.011             0.053             0.21                    0.91          0.92
-# 3   table6_size_op_ret.rds      r_mkt, SMB, HML, CMA 2.38 0.000             0.119             0.90                    0.28          0.91
-# 4   table6_size_op_ret.rds      r_mkt, SMB, RMW, CMA 1.89 0.006             0.049             0.23                    0.92          0.92
-# 5   table6_size_op_ret.rds r_mkt, SMB, HML, RMW, CMA 1.82 0.009             0.056             0.23                    0.84          0.93
-# 6  table6_size_inv_ret.rds           r_mkt, SMB, HML 6.07 0.000             0.134             0.71                    0.16          0.92
-# 7  table6_size_inv_ret.rds      r_mkt, SMB, HML, RMW 5.65 0.000             0.122             0.57                    0.18          0.92
-# 8  table6_size_inv_ret.rds      r_mkt, SMB, HML, CMA 5.09 0.000             0.113             0.50                    0.21          0.92
-# 9  table6_size_inv_ret.rds      r_mkt, SMB, RMW, CMA 4.35 0.000             0.089             0.30                    0.35          0.92
-# 10 table6_size_inv_ret.rds r_mkt, SMB, HML, RMW, CMA 4.57 0.000             0.101             0.36                    0.28          0.93
-# 11  table6_size_bm_ret.rds           r_mkt, SMB, HML 3.37 0.000             0.088             0.49                    0.27          0.91
-# 12  table6_size_bm_ret.rds      r_mkt, SMB, HML, RMW 2.86 0.000             0.067             0.27                    0.47          0.91
-# 13  table6_size_bm_ret.rds      r_mkt, SMB, HML, CMA 3.34 0.000             0.090             0.48                    0.28          0.91
-# 14  table6_size_bm_ret.rds      r_mkt, SMB, RMW, CMA 2.90 0.000             0.083             0.31                    0.55          0.88
-# 15  table6_size_bm_ret.rds r_mkt, SMB, HML, RMW, CMA 2.82 0.000             0.074             0.30                    0.44          0.91
+cat("Average GRS: ", mean(combined_results$GRS), "; Average P-val: ", mean(combined_results[["p-val"]]), "\n")

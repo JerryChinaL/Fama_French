@@ -12,6 +12,14 @@ max_date <- as.Date("2099-12-31")
 factors <- readRDS("data/portfolios_w_return_vol.rds") %>%
   select(KYPERMNO, KYGVKEY, monthly_date = YYYYMM, PRIMEXCH, MTHRET, VOL, bm, op, inv)
 
+mom_factors <- readRDS("data/mom_variables_vol.rds") %>%
+  select(KYPERMNO = permno, YYYYMM = sort_date, mom = cum_ret, portfolio_mom = momentum_portfolio, MTHCAP)
+
+volm_factors <- readRDS("../../ELM/data/ELM-portfolios_nordq2.rds") %>%
+  select(KYPERMNO, YYYYMM = monthly_date, volm = VOLM, portfolio_volm) %>%
+  filter(!is.na(volm) & !is.na(portfolio_volm)) %>%
+  distinct()
+
 # Define the function to assign portfolios
 assign_portfolio <- function(data, sorting_variable, percentiles) {
   if (all(is.na(data[[deparse(substitute(sorting_variable))]]))) {
@@ -59,6 +67,10 @@ portfolios_5x5 <- factors %>%
 # Convert YYYYMM to Date format
 portfolios_5x5 <- portfolios_5x5 %>% mutate(YYYYMM = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"))
 
+portfolios_5x5 <- portfolios_5x5 %>%
+  left_join(mom_factors, by = c("KYPERMNO", "YYYYMM")) %>%
+  left_join(volm_factors, by = c("KYPERMNO", "YYYYMM"))
+
 # Add the excess return column by appending rf rate then subtracting.
 rf_data <- read.csv("data/monthly_rf.csv")
 portfolios_5x5 <- portfolios_5x5 %>% 
@@ -68,7 +80,7 @@ portfolios_5x5 <- portfolios_5x5 %>%
   mutate(MTHRET = MTHRET - (RF / 100))
 
 # List of variables to loop through
-variables <- c("bm", "op", "inv")
+variables <- c("bm", "op", "inv", "mom", "volm")
 
 for (var in variables) {
   # Filter for non-NA values at the beginning of the loop
@@ -160,7 +172,7 @@ for (var in variables) {
   
   # Create the LaTeX section for the current variable
   latex_section <- paste0("
- \\multicolumn{4}{l}{Panel ", toupper(var), ": ", toupper(var), " Sorts} & & & & & & & \\\\
+ \\multicolumn{4}{l}{Panel VOL - ", toupper(var), " Sorts} & & & & & & & \\\\
  Illiquid &", paste(panel$means[1,], collapse=" & "), "&", paste(panel$tstats[1,], collapse=" & "), "\\\\
  2 &", paste(panel$means[2,], collapse=" & "), "&", paste(panel$tstats[2,], collapse=" & "), "\\\\
  3 &", paste(panel$means[3,], collapse=" & "), "&", paste(panel$tstats[3,], collapse=" & "), "\\\\
