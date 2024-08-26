@@ -11,7 +11,7 @@ date_max <- as.Date("2013-12-31")
 date_max <- as.Date("2093-12-31")
 
 # Load necessary libraries and data
-factors <- readRDS("data/portfolios_w_return_vol.rds") %>%
+factors <- readRDS("data/portfolios_w_return.rds") %>%
   mutate(monthly_date = as.Date(paste0(YYYYMM, "01"), format = "%Y%m%d"))
 
 momentum <- read.csv("data/momentum_factor_permno_nd.csv") %>%

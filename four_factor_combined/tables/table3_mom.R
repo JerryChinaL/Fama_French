@@ -8,7 +8,7 @@ max_Date = as.Date("2013-12-31")
 max_date <- as.Date("2099-12-31")
 
 # Load the factors data
-factors_replicated <- read.csv("data/ff5_vol.csv") %>%
+factors_replicated <- read.csv("data/ff5.csv") %>%
   mutate(monthly_date = as.Date(as.character(YYYYMM))) %>%
   select(monthly_date, SMB, HML, RMW, CMA, SMB_bm, SMB_op, SMB_inv)
 
@@ -89,15 +89,15 @@ latex_output <- paste0("
 \\footnotesize
 \\begin{tabular}{p{3.7cm} p{2cm} p{2cm} p{2cm} p{2cm} p{2cm} p{2cm}}
 \\hline
-\\multicolumn{7}{l}{Panel A: Summary statistics of the five factors plus VOLM} \\\\
- & $MKT_R$ & $SMB$ & $HML$ & $RMW$ & $CMA$ & $VOLM$ \\\\
+\\multicolumn{7}{l}{Panel A: Summary statistics of the five factors plus MOM} \\\\
+ & $MKT_R$ & $SMB$ & $HML$ & $RMW$ & $CMA$ & $MOM$ \\\\
  \\hline
 Arithmetic mean & ", paste(summary_stats_table_formatted$MKT_R[1], summary_stats_table_formatted$SMB[1], summary_stats_table_formatted$HML[1], summary_stats_table_formatted$RMW[1], summary_stats_table_formatted$CMA[1], summary_stats_table_formatted$MOM[1], sep = " & "), " \\\\
 Standard deviation & ", paste(summary_stats_table_formatted$MKT_R[2], summary_stats_table_formatted$SMB[2], summary_stats_table_formatted$HML[2], summary_stats_table_formatted$RMW[2], summary_stats_table_formatted$CMA[2], summary_stats_table_formatted$MOM[2], sep = " & "), " \\\\
 T-statistic & ", paste(summary_stats_table_formatted$MKT_R[3], summary_stats_table_formatted$SMB[3], summary_stats_table_formatted$HML[3], summary_stats_table_formatted$RMW[3], summary_stats_table_formatted$CMA[3], summary_stats_table_formatted$MOM[3], sep = " & "), " \\\\
 \\\\
-\\multicolumn{7}{l}{Panel B: Correlation matrix for the five factors plus VOLM} \\\\
- & $MKT_R$ & $SMB$ & $HML$ & $RMW$ & $CMA$ & $VOLM$ \\\\
+\\multicolumn{7}{l}{Panel B: Correlation matrix for the five factors plus MOM} \\\\
+ & $MKT_R$ & $SMB$ & $HML$ & $RMW$ & $CMA$ & $MOM$ \\\\
  \\hline
 $MKT_R$ & ", paste(cor_matrix_five_factors_formatted[1, ], collapse = " & "), " \\\\
 $SMB$ & ", paste(cor_matrix_five_factors_formatted[2, ], collapse = " & "), " \\\\
@@ -106,8 +106,8 @@ $RMW$ & ", paste(cor_matrix_five_factors_formatted[4, ], collapse = " & "), " \\
 $CMA$ & ", paste(cor_matrix_five_factors_formatted[5, ], collapse = " & "), " \\\\
 $MOM$ & ", paste(cor_matrix_five_factors_formatted[6, ], collapse = " & "), " \\\\
 \\\\
-\\multicolumn{7}{l}{Panel C: Correlation matrix for the SMB sub-factors plus VOLM} \\\\
- & $SMB_{bm}$ & $SMB_{op}$ & $SMB_{inv}$ & $SMB$ & $VOLM$ \\\\
+\\multicolumn{7}{l}{Panel C: Correlation matrix for the SMB sub-factors plus MOM} \\\\
+ & $SMB_{bm}$ & $SMB_{op}$ & $SMB_{inv}$ & $SMB$ & $MOM$ \\\\
  \\hline
 $SMB_{bm}$ & ", paste(cor_matrix_SMB_factors_formatted[1, ], collapse = " & "), " \\\\
 $SMB_{op}$ & ", paste(cor_matrix_SMB_factors_formatted[2, ], collapse = " & "), " \\\\

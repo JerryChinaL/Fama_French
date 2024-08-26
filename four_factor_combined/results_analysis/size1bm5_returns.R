@@ -1,9 +1,11 @@
+
+
 library(dplyr)
 library(ggplot2)
 
 # Load the data
 factors <- readRDS("data/portfolios_w_return.rds") %>%
-  select(KYPERMNO, KYGVKEY, monthly_date, PRIMEXCH, MTHRET, SIZE, bm, op, inv)
+  select(KYPERMNO, KYGVKEY, monthly_date = return_date, PRIMEXCH, MTHRET, SIZE, bm, op, inv)
 
 # Define the function to assign portfolios
 assign_portfolio <- function(data, sorting_variable, percentiles) {
