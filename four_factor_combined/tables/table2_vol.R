@@ -20,6 +20,15 @@ volm_factors <- readRDS("../../ELM/data/ELM-portfolios_nordq2.rds") %>%
   filter(!is.na(volm) & !is.na(portfolio_volm)) %>%
   distinct()
 
+
+# Define the winsorize function
+winsorize <- function(x, probs = c(0.01, 0.99)) {
+  q <- quantile(x, probs = probs, na.rm = TRUE)
+  x[x < q[1]] <- q[1]
+  x[x > q[2]] <- q[2]
+  return(x)
+}
+
 # Define the function to assign portfolios
 assign_portfolio <- function(data, sorting_variable, percentiles) {
   if (all(is.na(data[[deparse(substitute(sorting_variable))]]))) {
@@ -88,12 +97,30 @@ for (var in variables) {
     filter(!is.na(!!sym(paste0("portfolio_", var))) & !is.na(VOL) & !is.na(MTHRET),
            YYYYMM >= min_date & YYYYMM <= max_date)
   
+  # Conditionally apply winsorization outside mutate
+  if (var == "volm") {
+    portfolios_5x5_filtered <- portfolios_5x5_filtered %>%
+      mutate(winsorized_VOL = winsorize(VOL))
+  } else {
+    portfolios_5x5_filtered <- portfolios_5x5_filtered %>%
+      mutate(winsorized_VOL = VOL)
+  }
+  
+  # Set the weights
+  portfolios_5x5_filtered <- portfolios_5x5_filtered %>%
+    mutate(VOL_weight = ifelse(is.na(winsorized_VOL), 0, winsorized_VOL))
+  
   # Calculate the average monthly return for each quantile pair for each month
   monthly_grid <- portfolios_5x5_filtered %>%
     group_by(YYYYMM, portfolio_VOL, !!sym(paste0("portfolio_", var))) %>%
-    mutate(VOL_weight = ifelse(is.na(VOL), 0, VOL)) %>%
-    summarize(avg_monthly_return = weighted.mean(MTHRET, VOL_weight, na.rm = TRUE), .groups = "drop")
-  
+    summarize(avg_monthly_return = weighted.mean(MTHRET, VOL_weight, na.rm = TRUE), 
+              .groups = "drop")
+  # # Calculate the average monthly return for each quantile pair for each month
+  # monthly_grid <- portfolios_5x5_filtered %>%
+  #   group_by(YYYYMM, portfolio_VOL, !!sym(paste0("portfolio_", var))) %>%
+  #   mutate(VOL_weight = ifelse(is.na(VOL), 0, VOL)) %>%
+  #   summarize(avg_monthly_return = weighted.mean(MTHRET, VOL_weight, na.rm = TRUE), .groups = "drop")
+  # 
   # Pivot the data to a wider format
   monthly_grid_wide <- monthly_grid %>%
     unite("quantile", portfolio_VOL, !!sym(paste0("portfolio_", var)), sep = "") %>%

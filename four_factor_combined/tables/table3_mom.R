@@ -8,13 +8,9 @@ max_Date = as.Date("2013-12-31")
 max_date <- as.Date("2099-12-31")
 
 # Load the factors data
-factors_replicated <- read.csv("data/ff5.csv") %>%
+factors_replicated <- read.csv("data/ff5.csv") %>% # ff5, ff5_vol
   mutate(monthly_date = as.Date(as.character(YYYYMM))) %>%
   select(monthly_date, SMB, HML, RMW, CMA, SMB_bm, SMB_op, SMB_inv)
-
-# VOLM
-# momentum <- readRDS("../../ELM/data/ELM-4-factors-replicated-nordq2.rds") %>%
-#   select(monthly_date, MOM = r_volm)
 
 # Carhart MOM
 momentum <- read.csv("data/momentum_factor_permno_nd.csv") %>%

@@ -6,7 +6,7 @@ library(readxl)
 library(gridExtra)
 
 # Read the CSV file
-mom_permno <- read.csv("data/momentum_factor_permno_vol.csv") 
+mom_permno <- read.csv("data/momentum_factor_permno_nd.csv") 
 
 # mom_permno <- mom_permno %>% filter(YYYYMM >= 196207)
 # Read the Excel file

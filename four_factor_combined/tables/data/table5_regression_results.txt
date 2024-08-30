@@ -1,6 +1,6 @@
 Coefficients-latex :
 % latex table generated in R 4.4.0 by xtable 1.8-4 package
-% Thu Aug 22 11:09:38 2024
+% Fri Aug 30 10:53:08 2024
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrrrr}
@@ -18,7 +18,7 @@ r\_mkt &  & 0.36 & 0.07 & -0.15 & -0.76 & 0.77 & 0.21 \\
 
 T-Statistics-latex :
 % latex table generated in R 4.4.0 by xtable 1.8-4 package
-% Thu Aug 22 11:09:38 2024
+% Fri Aug 30 10:53:08 2024
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrrrr}
